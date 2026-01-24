@@ -491,7 +491,7 @@ const XMLCheckboxTree = () => {
                     XML Attribute Extractor
                 </Heading>
                 <Box>
-                    <Text mb={2} fontSize="sm" color="gray.500">Upload your Site Preferences XML file to see available attributes.</Text>
+                    <Text mb={2} fontSize="sm" color="gray.500">Upload your metadata XML file to see available attributes.</Text>
                     <Input
                         type="file"
                         accept=".xml"
