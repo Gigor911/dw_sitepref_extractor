@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import {
   Box,
   Checkbox,
@@ -6,12 +6,12 @@ import {
   Text,
 } from '@chakra-ui/react';
 
-const AttributeItem = ({ attr, typeId, isSelected, onToggle }) => {
-    const handleChange = (e) => {
+const AttributeItem = memo(({ attr, typeId, isSelected, onToggle }) => {
+    const handleCheckedChange = useCallback((details) => {
         if (onToggle && typeId) {
-            onToggle(typeId, attr.id, e.target.checked);
+            onToggle(typeId, attr.id, details.checked);
         }
-    };
+    }, [onToggle, typeId, attr.id]);
 
     return (
         <Checkbox.Root
@@ -19,11 +19,7 @@ const AttributeItem = ({ attr, typeId, isSelected, onToggle }) => {
             colorPalette="blue"
             alignItems="flex-start"
             checked={isSelected}
-            onCheckedChange={(details) => {
-                if (onToggle && typeId) {
-                    onToggle(typeId, attr.id, details.checked);
-                }
-            }}
+            onCheckedChange={handleCheckedChange}
         >
             <Checkbox.HiddenInput />
             <Checkbox.Control>
@@ -40,6 +36,8 @@ const AttributeItem = ({ attr, typeId, isSelected, onToggle }) => {
             </Checkbox.Label>
         </Checkbox.Root>
     );
-};
+});
+
+AttributeItem.displayName = 'AttributeItem';
 
 export default AttributeItem;
