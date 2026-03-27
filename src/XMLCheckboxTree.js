@@ -36,6 +36,7 @@ import {
     getAppState
 } from './utils/db';
 import {generateXML} from './utils/xmlGenerator';
+import {buildCheckboxTree} from './utils/xmlParser';
 
 const XMLCheckboxTree = () => {
     const [checkboxTree, setCheckboxTree] = useState(null);
@@ -389,81 +390,6 @@ const XMLCheckboxTree = () => {
         });
     }, [checkboxTree, typeFilter, attributeFilter]);
 
-    const buildCheckboxTree = (xmlData) => {
-        const tree = [];
-        let typeExtensions = [];
-
-        // Handle different XML structures (e.g., wrapped in metadata or directly in type-extensions)
-        if (xmlData['type-extensions']?.['type-extension']) {
-            typeExtensions = xmlData['type-extensions']['type-extension'];
-        } else if (xmlData['metadata']?.['type-extension']) {
-            typeExtensions = xmlData['metadata']['type-extension'];
-        } else if (xmlData['type-extension']) {
-            typeExtensions = xmlData['type-extension'];
-        }
-
-        if (!typeExtensions.length) {
-            console.warn('No type-extensions found in XML');
-        }
-
-        typeExtensions.forEach((typeExtension) => {
-            const typeId = typeExtension['$']?.['type-id'];
-
-            const definitionsWrapper = typeExtension['custom-attribute-definitions']?.[0];
-            // Check for both 'attribute-definition' (per user request) and 'custom-attribute-definition' (legacy/alternative)
-            const customAttributes = definitionsWrapper?.['attribute-definition'] || definitionsWrapper?.['custom-attribute-definition'] || [];
-
-            const attributes = customAttributes.map((attr) => {
-                const id = attr['$']?.['attribute-id'];
-
-                // Extract display-name
-                let displayName = '';
-                if (attr['display-name']) {
-                    const dn = attr['display-name'][0];
-                    displayName = typeof dn === 'object' ? dn._ : dn; // Handle xml2js structure with attributes vs plain text
-                }
-
-                // Extract type (inside tag as requested)
-                let type = '';
-                if (attr['type']) {
-                    const t = attr['type'][0];
-                    type = typeof t === 'object' ? t._ : t;
-                } else if (attr['$']?.['type']) {
-                    // Fallback to attribute if not found as child node
-                    type = attr['$']['type'];
-                }
-
-                return {id, displayName, type};
-            });
-
-            // Parse group-definitions
-            const groupDefinitionsWrapper = typeExtension['group-definitions']?.[0];
-            const attributeGroups = groupDefinitionsWrapper?.['attribute-group'] || [];
-
-            const groups = attributeGroups.map((group) => {
-                const groupId = group['$']?.['group-id'];
-
-                // Extract display-name
-                let displayName = '';
-                if (group['display-name']) {
-                    const dn = group['display-name'][0];
-                    displayName = typeof dn === 'object' ? dn._ : dn;
-                }
-
-                // Extract attribute references
-                const groupAttributes = group['attribute'] || [];
-                const attributeIds = groupAttributes.map(attr => attr['$']?.['attribute-id']).filter(Boolean);
-
-                return {groupId, displayName, attributeIds};
-            });
-
-            if (attributes.length > 0) {
-                tree.push({typeId, attributes, groups});
-            }
-        });
-
-        return tree;
-    };
 
     return (
         <Box p={4}>
@@ -472,7 +398,7 @@ const XMLCheckboxTree = () => {
                     <Card.Root mb={4} variant="outline" boxShadow="sm">
                         <Card.Body>
                             <Heading as="h1" size="lg" mb={3}>
-                                XML Attribute Extractor
+                                Extract from XML
                             </Heading>
                             <Box>
                                 <Text mb={2} fontSize="sm" color="gray.500">Upload your metadata XML file to see

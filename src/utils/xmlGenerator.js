@@ -33,13 +33,79 @@ export const generateXML = (checkboxTree, selectedAttributes, isPartial = true) 
                     xmlLines.push(`            <display-name xml:lang="x-default">${escapeXml(attr.displayName)}</display-name>`);
                 }
 
+                if (attr.description) {
+                    xmlLines.push(`            <description xml:lang="x-default">${escapeXml(attr.description)}</description>`);
+                }
+
                 if (attr.type) {
                     xmlLines.push(`            <type>${attr.type}</type>`);
                 }
 
-                // Add default flags
-                xmlLines.push('            <mandatory-flag>false</mandatory-flag>');
-                xmlLines.push('            <externally-managed-flag>false</externally-managed-flag>');
+                // Flags - only add if explicitly set
+                if (attr.localizable !== undefined && attr.localizable) {
+                    xmlLines.push('            <localizable-flag>true</localizable-flag>');
+                }
+                if (attr.siteSpecific !== undefined && attr.siteSpecific) {
+                    xmlLines.push('            <site-specific-flag>true</site-specific-flag>');
+                }
+                if (attr.mandatory !== undefined) {
+                    xmlLines.push(`            <mandatory-flag>${attr.mandatory}</mandatory-flag>`);
+                } else {
+                    xmlLines.push('            <mandatory-flag>false</mandatory-flag>');
+                }
+                if (attr.visible !== undefined) {
+                    xmlLines.push(`            <visible-flag>${attr.visible}</visible-flag>`);
+                }
+                if (attr.externallyManaged !== undefined) {
+                    xmlLines.push(`            <externally-managed-flag>${attr.externallyManaged}</externally-managed-flag>`);
+                } else {
+                    xmlLines.push('            <externally-managed-flag>false</externally-managed-flag>');
+                }
+
+                // Validation fields
+                if (attr.minLength) {
+                    xmlLines.push(`            <min-length>${attr.minLength}</min-length>`);
+                }
+                if (attr.maxLength) {
+                    xmlLines.push(`            <field-length>${attr.maxLength}</field-length>`);
+                }
+                if (attr.fieldHeight) {
+                    xmlLines.push(`            <field-height>${attr.fieldHeight}</field-height>`);
+                }
+                if (attr.minValue) {
+                    xmlLines.push(`            <min-value>${attr.minValue}</min-value>`);
+                }
+                if (attr.maxValue) {
+                    xmlLines.push(`            <max-value>${attr.maxValue}</max-value>`);
+                }
+                if (attr.scale) {
+                    xmlLines.push(`            <scale>${attr.scale}</scale>`);
+                }
+                if (attr.regex) {
+                    xmlLines.push(`            <regex>${escapeXml(attr.regex)}</regex>`);
+                }
+
+                // Enum values
+                if (attr.enumValues && attr.enumValues.length > 0) {
+                    xmlLines.push('            <value-definitions>');
+                    attr.enumValues.forEach(ev => {
+                        if (ev.value) {
+                            const defaultAttr = ev.isDefault ? ' default="true"' : '';
+                            xmlLines.push(`                <value-definition${defaultAttr}>`);
+                            if (ev.display) {
+                                xmlLines.push(`                    <display xml:lang="x-default">${escapeXml(ev.display)}</display>`);
+                            }
+                            xmlLines.push(`                    <value>${escapeXml(ev.value)}</value>`);
+                            xmlLines.push('                </value-definition>');
+                        }
+                    });
+                    xmlLines.push('            </value-definitions>');
+                }
+
+                // Default value
+                if (attr.defaultValue) {
+                    xmlLines.push(`            <default-value>${escapeXml(attr.defaultValue)}</default-value>`);
+                }
 
                 xmlLines.push('        </attribute-definition>');
             });
@@ -121,13 +187,79 @@ export const generateXML = (checkboxTree, selectedAttributes, isPartial = true) 
                 xmlLines.push(`                <display-name xml:lang="x-default">${escapeXml(attr.displayName)}</display-name>`);
             }
 
+            if (attr.description) {
+                xmlLines.push(`                <description xml:lang="x-default">${escapeXml(attr.description)}</description>`);
+            }
+
             if (attr.type) {
                 xmlLines.push(`                <type>${attr.type}</type>`);
             }
 
-            // Add default flags
-            xmlLines.push('                <mandatory-flag>false</mandatory-flag>');
-            xmlLines.push('                <externally-managed-flag>false</externally-managed-flag>');
+            // Flags - only add if explicitly set
+            if (attr.localizable !== undefined && attr.localizable) {
+                xmlLines.push('                <localizable-flag>true</localizable-flag>');
+            }
+            if (attr.siteSpecific !== undefined && attr.siteSpecific) {
+                xmlLines.push('                <site-specific-flag>true</site-specific-flag>');
+            }
+            if (attr.mandatory !== undefined) {
+                xmlLines.push(`                <mandatory-flag>${attr.mandatory}</mandatory-flag>`);
+            } else {
+                xmlLines.push('                <mandatory-flag>false</mandatory-flag>');
+            }
+            if (attr.visible !== undefined) {
+                xmlLines.push(`                <visible-flag>${attr.visible}</visible-flag>`);
+            }
+            if (attr.externallyManaged !== undefined) {
+                xmlLines.push(`                <externally-managed-flag>${attr.externallyManaged}</externally-managed-flag>`);
+            } else {
+                xmlLines.push('                <externally-managed-flag>false</externally-managed-flag>');
+            }
+
+            // Validation fields
+            if (attr.minLength) {
+                xmlLines.push(`                <min-length>${attr.minLength}</min-length>`);
+            }
+            if (attr.maxLength) {
+                xmlLines.push(`                <field-length>${attr.maxLength}</field-length>`);
+            }
+            if (attr.fieldHeight) {
+                xmlLines.push(`                <field-height>${attr.fieldHeight}</field-height>`);
+            }
+            if (attr.minValue) {
+                xmlLines.push(`                <min-value>${attr.minValue}</min-value>`);
+            }
+            if (attr.maxValue) {
+                xmlLines.push(`                <max-value>${attr.maxValue}</max-value>`);
+            }
+            if (attr.scale) {
+                xmlLines.push(`                <scale>${attr.scale}</scale>`);
+            }
+            if (attr.regex) {
+                xmlLines.push(`                <regex>${escapeXml(attr.regex)}</regex>`);
+            }
+
+            // Enum values
+            if (attr.enumValues && attr.enumValues.length > 0) {
+                xmlLines.push('                <value-definitions>');
+                attr.enumValues.forEach(ev => {
+                    if (ev.value) {
+                        const defaultAttr = ev.isDefault ? ' default="true"' : '';
+                        xmlLines.push(`                    <value-definition${defaultAttr}>`);
+                        if (ev.display) {
+                            xmlLines.push(`                        <display xml:lang="x-default">${escapeXml(ev.display)}</display>`);
+                        }
+                        xmlLines.push(`                        <value>${escapeXml(ev.value)}</value>`);
+                        xmlLines.push('                    </value-definition>');
+                    }
+                });
+                xmlLines.push('                </value-definitions>');
+            }
+
+            // Default value
+            if (attr.defaultValue) {
+                xmlLines.push(`                <default-value>${escapeXml(attr.defaultValue)}</default-value>`);
+            }
 
             xmlLines.push('            </attribute-definition>');
         });
@@ -167,7 +299,6 @@ export const generateXML = (checkboxTree, selectedAttributes, isPartial = true) 
         }
 
         xmlLines.push('    </type-extension>');
-        xmlLines.push('');
     });
 
     // Close metadata

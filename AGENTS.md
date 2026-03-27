@@ -1,4 +1,4 @@
-# AI Context — dw_sitepref_extractor
+# AI Context — SFCC Metadata Tools (dw_sitepref_extractor)
 
 > This file is intended for AI coding assistants (GitHub Copilot, Cursor, Windsurf, etc.).
 > It describes the full project architecture, conventions, data models, and critical API
@@ -8,7 +8,7 @@
 
 ## 1. What This Project Is
 
-A **fully client-side** React web app that parses **Salesforce Commerce Cloud (SFCC / Demandware) metadata XML files**, displays all `type-extension` definitions in a browsable/filterable accordion UI, lets users cherry-pick specific custom attributes and attribute groups, and exports them as XML — either as a complete document or as per-type snippets.
+**SFCC Metadata Tools** is a **fully client-side** React web app that parses **Salesforce Commerce Cloud (SFCC / Demandware) metadata XML files**, displays all `type-extension` definitions in a browsable/filterable accordion UI, lets users cherry-pick specific custom attributes and attribute groups, and exports them as XML — either as a complete document or as per-type snippets.
 
 **No backend.** Everything — XML parsing, state persistence (IndexedDB), and XML generation — runs in the browser.
 
@@ -30,12 +30,14 @@ A **fully client-side** React web app that parses **Salesforce Commerce Cloud (S
 | xml2js | ^0.6.2 | `parseString` for XML→JS parsing |
 | idb | ^8.0.3 | Thin wrapper around IndexedDB |
 | react-icons | ^5.x | `MdClose`, `MdContentCopy`, `MdCheck` from `react-icons/md`; `FaTrash`, `FaQuestion` from `react-icons/fa` |
+| react-router-dom | ^7.x | Client-side routing. Uses BrowserRouter with basename for GitHub Pages. |
 | react-app-rewired | ^2.2.1 | CRA config override — all scripts use `react-app-rewired` instead of `react-scripts` |
 
 ### Build tooling
 
 - **Create React App** (not ejected) with `react-app-rewired`.
-- `config-overrides.js` polyfills Node builtins for browser (`timers`, `buffer`, `stream`) — required by `xml2js`.
+- `config-overrides.js` polyfills Node builtins for browser (`timers`, `buffer`, `stream`, `process`) — required by `xml2js` and `react-router-dom`.
+- Includes `fullySpecified: false` webpack rule to fix React Router v7 module resolution.
 - Scripts: `npm start` / `npm run build` / `npm test` all route through `react-app-rewired`.
 
 ---
@@ -45,16 +47,30 @@ A **fully client-side** React web app that parses **Salesforce Commerce Cloud (S
 ```
 src/
 ├── index.js                    → React 19 createRoot entry. Wraps <App /> in StrictMode.
-├── App.js                      → ChakraProvider (v3 defaultSystem) → <XMLCheckboxTree />
+├── App.js                      → ChakraProvider (v3 defaultSystem). Owns `currentScreen` state
+│                                  ('home' | 'extract' | 'create'). Renders sticky breadcrumb nav
+│                                  + conditional screen component. No router — pure state nav.
 ├── App.css                     → Default CRA CSS (largely unused)
 ├── index.css                   → Base body styles
 │
-├── XMLCheckboxTree.js          → ★ MAIN COMPONENT (677 lines). ALL app state lives here.
+├── XMLCheckboxTree.js          → ★ EXTRACT FLOW COMPONENT (677 lines). ALL extract state lives here.
 │                                  Handles: file upload, XML parsing (buildCheckboxTree),
 │                                  filtering (useMemo filteredTree), selection management,
 │                                  IndexedDB persistence, export orchestration, full layout.
 │
 ├── components/
+│   ├── HomePage.js             → Landing screen. Two flow-selection cards (extract / create).
+│   │                              Uses useNavigate() hook to navigate to /extract or /create.
+│   │                              No props — self-contained. Rendered at path='/'.
+│   │
+│   ├── CreatePreferences.js    → ★ CREATE FLOW COMPONENT. Build SFCC type-extensions from scratch.
+│   │                              IndexedDB persistence (auto-saves to 'create-flow-state' key).
+│   │                              State: typeExtensions array with nested attributes + groups arrays.
+│   │                              Loads suggested groups from extract flow's current file.
+│   │                              Modal editors for attributes and groups.
+│   │                              Reuses ExportModal + generateXML for export.
+│   │                              No props needed (self-contained).
+│   │
 │   ├── AttributeList.js        → Grid of attributes. Dual-mode: plain grid (≤50 items) or
 │   │                              react-window v2 virtualized list (>50 items).
 │   ├── AttributeItem.js        → Single attribute checkbox (memo'd). Chakra v3 Checkbox compound.
@@ -72,9 +88,34 @@ src/
 
 ---
 
-## 4. Core Data Model
+## 4. App Navigation (React Router v7)
 
-### 4a. Parsed Tree (`checkboxTree` state — Array)
+`App.js` uses React Router for client-side routing:
+
+```javascript
+<BrowserRouter basename="/dw_sitepref_extractor">
+  <Routes>
+    <Route path="/" element={<HomePage />} />
+    <Route path="/extract" element={<XMLCheckboxTree />} />
+    <Route path="/create" element={<CreatePreferences />} />
+  </Routes>
+</BrowserRouter>
+```
+
+- **`/`** → renders `<HomePage />` which uses `useNavigate()` to navigate
+- **`/extract`** → renders `<XMLCheckboxTree />` (existing flow)
+- **`/create`** → renders `<CreatePreferences />` (new flow)
+- **`basename="/dw_sitepref_extractor"`** → required for GitHub Pages deployment
+
+A sticky `<Breadcrumb />` component (using `useLocation()` and `useNavigate()`) renders at the top when not on the home route: **← Home / Screen Name**
+
+**Important for GitHub Pages**: The `basename` must match the repository name in `package.json` `homepage` field.
+
+---
+
+## 5. Core Data Model
+
+### 5a. Parsed Tree (`checkboxTree` state — Array)
 
 ```javascript
 [
@@ -101,7 +142,7 @@ src/
 ]
 ```
 
-### 4b. Selection State (`selectedAttributes` — Object)
+### 5b. Selection State (`selectedAttributes` — Object)
 
 ```javascript
 // In-memory: values are Sets
@@ -113,7 +154,7 @@ src/
 
 Conversion happens on save (Set→Array) and restore (Array→Set).
 
-### 4c. File History Entry (IndexedDB)
+### 5c. File History Entry (IndexedDB)
 
 ```javascript
 {
@@ -153,6 +194,7 @@ saveFileToHistory(fileId, data), updateFileState(fileId, fileState)
 getFileFromHistory(fileId), getCurrentFileId(), getAllFileHistory()
 deleteFileFromHistory(fileId)
 saveAppState(state), getAppState()
+saveCreateState(typeExtensions), getCreateState(), clearCreateState()
 ```
 
 ---

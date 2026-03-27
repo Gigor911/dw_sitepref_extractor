@@ -5,9 +5,19 @@ module.exports = function override(config) {
   Object.assign(fallback, {
     "timers": require.resolve("timers-browserify"),
     "buffer": require.resolve("buffer/"),
-    "stream": require.resolve("stream-browserify")
+    "stream": require.resolve("stream-browserify"),
+    "process": require.resolve("process/browser")
   });
   config.resolve.fallback = fallback;
+  
+  // Fix for react-router-dom module resolution
+  config.module.rules.push({
+    test: /\.m?js/,
+    resolve: {
+      fullySpecified: false
+    }
+  });
+  
   config.plugins = (config.plugins || []).concat([
     new webpack.ProvidePlugin({
       process: 'process/browser',

@@ -9,7 +9,7 @@ import {
   Heading,
 } from '@chakra-ui/react';
 import { Dialog } from '@chakra-ui/react';
-import { MdContentCopy, MdCheck } from 'react-icons/md';
+import { MdContentCopy, MdCheck, MdDownload } from 'react-icons/md';
 import { generateExportSummary } from '../utils/xmlGenerator';
 
 const ExportModal = ({ isOpen, onClose, snippet, exportType = 'partial', selectedAttributes, checkboxTree }) => {
@@ -22,6 +22,22 @@ const ExportModal = ({ isOpen, onClose, snippet, exportType = 'partial', selecte
             setTimeout(() => setCopiedIndex(null), 2000);
         } catch (err) {
             console.error('Failed to copy:', err);
+        }
+    };
+
+    const handleDownload = (text, filename) => {
+        try {
+            const blob = new Blob([text], { type: 'application/xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('Failed to download:', err);
         }
     };
 
@@ -100,22 +116,56 @@ const ExportModal = ({ isOpen, onClose, snippet, exportType = 'partial', selecte
                                     >
                                         <Code>{item.snippet}</Code>
                                     </Box>
-                                    <Button
-                                        width="100%"
-                                        colorPalette={copiedIndex === index ? 'green' : 'blue'}
-                                        onClick={() => handleCopy(item.snippet, index)}
-                                        size="sm"
-                                    >
-                                        {copiedIndex === index ? (
-                                            <>
-                                                <MdCheck /> Copied!
-                                            </>
-                                        ) : (
-                                            <>
-                                                <MdContentCopy /> Copy {isPartialExport ? item.typeId : 'to Clipboard'}
-                                            </>
+                                    <HStack gap={2}>
+                                        <Button
+                                            flex={1}
+                                            colorPalette={copiedIndex === index ? 'green' : 'blue'}
+                                            onClick={() => handleCopy(item.snippet, index)}
+                                            size="sm"
+                                        >
+                                            {copiedIndex === index ? (
+                                                <>
+                                                    <MdCheck /> Copied!
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <MdContentCopy /> Copy {isPartialExport ? item.typeId : 'to Clipboard'}
+                                                </>
+                                            )}
+                                        </Button>
+                                        
+                                        {!isPartialExport && (
+                                            <Button
+                                                flex={1}
+                                                colorPalette="green"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    const timestamp = new Date().toISOString().split('T')[0];
+                                                    const filename = `metadata-export-${timestamp}.xml`;
+                                                    handleDownload(item.snippet, filename);
+                                                }}
+                                                size="sm"
+                                            >
+                                                <MdDownload /> Download XML
+                                            </Button>
                                         )}
-                                    </Button>
+                                        
+                                        {isPartialExport && (
+                                            <Button
+                                                flex={1}
+                                                colorPalette="green"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    const sanitizedTypeId = item.typeId.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+                                                    const filename = `${sanitizedTypeId}-snippet.xml`;
+                                                    handleDownload(item.snippet, filename);
+                                                }}
+                                                size="sm"
+                                            >
+                                                <MdDownload /> Download
+                                            </Button>
+                                        )}
+                                    </HStack>
                                 </Box>
                             ))}
                         </VStack>

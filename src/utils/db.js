@@ -90,3 +90,20 @@ export const getAppState = async () => {
     return await db.get(STORE_NAME, APP_STATE_KEY);
 };
 
+// Create Flow State Management
+const CREATE_STATE_KEY = 'create-flow-state';
+
+export const saveCreateState = async (typeExtensions) => {
+    const db = await initDB();
+    await db.put(STORE_NAME, typeExtensions, CREATE_STATE_KEY);
+};
+
+export const getCreateState = async () => {
+    const db = await initDB();
+    return await db.get(STORE_NAME, CREATE_STATE_KEY);
+};
+
+export const clearCreateState = async () => {
+    const db = await initDB();
+    await db.delete(STORE_NAME, CREATE_STATE_KEY);
+};
