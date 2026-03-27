@@ -49,7 +49,7 @@ const FLOWS = [
         ],
         buttonLabel: 'Start Creating',
         colorPalette: 'green',
-        badge: 'New',
+        badge: 'Beta',
     },
 ];
 
@@ -87,7 +87,7 @@ const FlowCard = ({ flow, onClick }) => {
                             {title}
                         </Heading>
                         {badge && (
-                            <Badge colorPalette={colorPalette} variant="subtle" size="sm">
+                            <Badge colorPalette="red" variant="subtle" size="sm">
                                 {badge}
                             </Badge>
                         )}
