@@ -1,0 +1,9 @@
+For full project context, read AGENTS.md in the project root first.
+
+CRITICAL API CONSTRAINTS:
+- Chakra UI v3 (NOT v2): Use compound components — Checkbox.Root, Accordion.Root, Dialog.Root, Card.Root/Card.Body. Use colorPalette not colorScheme.
+- react-window v2 (NOT v1): Use <List rowComponent={Comp} rowCount={n} rowHeight={h} rowProps={obj} />. NOT FixedSizeList/itemCount/children-render-function.
+- React 19 with createRoot API.
+- No backend. Client-side only. IndexedDB via idb library for persistence.
+- Build tooling: CRA + react-app-rewired (not raw react-scripts).
+
